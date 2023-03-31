@@ -13,4 +13,5 @@ public class VanillaEmiRecipeCategories {
 	public static EmiRecipeCategory BREWING;
 	public static EmiRecipeCategory WORLD_INTERACTION;
 	public static EmiRecipeCategory INFO;
+	public static EmiRecipeCategory COMPOSTING;
 }

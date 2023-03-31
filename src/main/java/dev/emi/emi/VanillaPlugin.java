@@ -12,6 +12,7 @@ import static dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.SMITHING;
 import static dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.SMOKING;
 import static dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.STONECUTTING;
 import static dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.WORLD_INTERACTION;
+import static dev.emi.emi.api.recipe.VanillaEmiRecipeCategories.COMPOSTING;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.datafixers.util.Pair;
@@ -54,6 +56,7 @@ import dev.emi.emi.recipe.EmiShapelessRecipe;
 import dev.emi.emi.recipe.EmiSmithingRecipe;
 import dev.emi.emi.recipe.EmiStonecuttingRecipe;
 import dev.emi.emi.recipe.EmiTagRecipe;
+import dev.emi.emi.recipe.EmiComposterRecipe;
 import dev.emi.emi.recipe.special.EmiAnvilEnchantRecipe;
 import dev.emi.emi.recipe.special.EmiAnvilRepairItemRecipe;
 import dev.emi.emi.recipe.special.EmiArmorDyeRecipe;
@@ -68,9 +71,11 @@ import dev.emi.emi.recipe.special.EmiGrindstoneDisenchantingRecipe;
 import dev.emi.emi.recipe.special.EmiMapCloningRecipe;
 import dev.emi.emi.recipe.special.EmiRepairItemRecipe;
 import dev.emi.emi.recipe.special.EmiSuspiciousStewRecipe;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.ComposterBlock;
 import net.minecraft.block.Oxidizable;
 import net.minecraft.block.ShulkerBoxBlock;
 import net.minecraft.block.TallFlowerBlock;
@@ -172,6 +177,8 @@ public class VanillaPlugin implements EmiPlugin {
 			EmiStack.of(Items.GRASS_BLOCK), simplifiedRenderer(208, 224), EmiRecipeSorting.none());
 		INFO = new EmiRecipeCategory(new Identifier("emi:info"),
 			EmiStack.of(Items.WRITABLE_BOOK), simplifiedRenderer(208, 224), EmiRecipeSorting.none());
+		COMPOSTING = new EmiRecipeCategory(new Identifier("emi:composting"),
+				EmiStack.of(Blocks.COMPOSTER), simplifiedRenderer(208, 224), EmiRecipeSorting.compareInputThenOutput());
 		registry.addCategory(CRAFTING);
 		registry.addCategory(SMELTING);
 		registry.addCategory(BLASTING);
@@ -187,6 +194,7 @@ public class VanillaPlugin implements EmiPlugin {
 		registry.addCategory(TAG);
 		registry.addCategory(INGREDIENT);
 		registry.addCategory(RESOLUTION);
+		registry.addCategory(COMPOSTING);
 
 		registry.addWorkstation(CRAFTING, EmiStack.of(Items.CRAFTING_TABLE));
 		registry.addWorkstation(SMELTING, EmiStack.of(Items.FURNACE));
@@ -201,6 +209,7 @@ public class VanillaPlugin implements EmiPlugin {
 		registry.addWorkstation(ANVIL_REPAIRING, EmiStack.of(Items.DAMAGED_ANVIL));
 		registry.addWorkstation(BREWING, EmiStack.of(Items.BREWING_STAND));
 		registry.addWorkstation(GRINDING, EmiStack.of(Items.GRINDSTONE));
+		registry.addWorkstation(COMPOSTING, EmiStack.of(Blocks.COMPOSTER));
 
 		registry.addRecipeHandler(null, new InventoryRecipeHandler());
 		registry.addRecipeHandler(ScreenHandlerType.CRAFTING, new CraftingRecipeHandler());
@@ -626,6 +635,13 @@ public class VanillaPlugin implements EmiPlugin {
 		EmiStack mud = EmiStack.of(Items.MUD);
 		addRecipeSafe(registry, () -> basicWorld(EmiStack.of(Items.DIRT), waterBottle, mud,
 			new Identifier("emi:emi/mud"), false));
+
+		ComposterBlock.ITEM_TO_LEVEL_INCREASE_CHANCE.object2FloatEntrySet()
+				.stream()
+				.collect(Collectors.groupingBy(Object2FloatMap.Entry::getFloatValue,
+						Collectors.mapping(entry -> EmiStack.of(entry.getKey()), Collectors.toList())))
+				.forEach((chance, items) ->
+						addRecipeSafe(registry, () -> new EmiComposterRecipe(chance, items)));
 	}
 
 	private static void addRecipeSafe(EmiRegistry registry, Supplier<EmiRecipe> supplier) {
