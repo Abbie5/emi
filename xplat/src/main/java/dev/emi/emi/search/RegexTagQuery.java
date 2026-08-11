@@ -1,6 +1,6 @@
 package dev.emi.emi.search;
 
-import net.minecraft.item.BlockItem;
+import net.minecraft.block.Block;
 
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -38,15 +38,17 @@ public class RegexTagQuery extends Query {
 					return true;
 				}
 				return false;
-			}).flatMap(v -> v.stream()).collect(Collectors.toSet());
+			}).flatMap(v -> v.stream().map(e -> {
+				if (e instanceof Block b) {
+					return b.asItem();
+				}
+				return e;
+			})).collect(Collectors.toSet());
 		}
 	}
 
 	@Override
 	public boolean matches(EmiStack stack) {
-		if (stack.getKey() instanceof BlockItem bi && valid.contains(bi.getBlock())) {
-			return true;
-		}
 		return valid.contains(stack.getKey());
 	}
 }
